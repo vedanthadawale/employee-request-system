@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Employee Request Management System – PoC</title>
+<style>
+:root{--bg:#f6f8fb;--card:#fff;--ink:#14213d;--mut:#5b6678;--line:#dbe2ec;--acc:#2a3a9b;--sky:#4cb8e8;--ok:#1b8a5a;--warn:#c27a00;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1624;--card:#18223a;--ink:#e8edf7;--mut:#9aa7bf;--line:#2b3753;--acc:#8fa2ff;--sky:#4cb8e8;--ok:#4cc38a;--warn:#e5a93c;--bad:#ef7b6e}}
+:root[data-theme="dark"]{--bg:#0f1624;--card:#18223a;--ink:#e8edf7;--mut:#9aa7bf;--line:#2b3753;--acc:#8fa2ff;--ok:#4cc38a;--warn:#e5a93c;--bad:#ef7b6e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{padding:20px 16px 0;max-width:1000px;margin:auto}
+h1{font:600 22px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+header p{margin:0;color:var(--mut)}
+nav{display:flex;gap:4px;max-width:1000px;margin:16px auto 0;padding:0 16px;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;padding:10px 14px;font:inherit;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
+nav button[aria-selected=true]{color:var(--ink);border-color:var(--acc);font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+main{max-width:1000px;margin:auto;padding:16px}
+.panel{display:none}.panel.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+label{display:block;font-weight:600;margin:10px 0 4px;font-size:13px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:90px;resize:vertical}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:14px}
+:root[data-theme="dark"] .btn,:root:not([data-theme="light"]) .btn{color:#0f1624}
+.btn.sm{padding:4px 10px;margin:0;font-size:13px}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.Open{color:var(--warn)}.Active{color:var(--acc)}.Finalized{color:var(--ok)}
+.P1{color:var(--bad)}.P2{color:var(--warn)}.P3{color:var(--mut)}
+.tk{border-top:1px solid var(--line);padding:12px 0}
+.tk:first-child{border-top:0}
+.meta{color:var(--mut);font-size:13px}
+.hint{background:var(--bg);border:1px dashed var(--line);border-radius:6px;padding:8px 10px;font-size:13px;margin-top:10px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.stats div{flex:1;min-width:90px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px}
+.stats b{display:block;font-size:22px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+pre.mermaid{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;margin:0 0 16px}
+h2{font:600 17px Georgia,serif;margin:0 0 8px}
+ul{margin:6px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>Employee Request Management System</h1>
+<p>Proof of concept: one intake, automatic triage, tracked to closure.</p>
+</header>
+<nav role="tablist">
+<button role="tab" aria-selected="true" data-t="submit">Submit request</button>
+<button role="tab" aria-selected="false" data-t="desk">Service desk</button>
+<button role="tab" aria-selected="false" data-t="flow">Workflow</button>
+<button role="tab" aria-selected="false" data-t="rules">Routing rules</button>
+</nav>
+<main>
+
+<section class="panel on" id="submit">
+<div class="grid">
+<div class="card">
+<h2>New request</h2>
+<label for="nm">Your name</label><input id="nm" placeholder="e.g. Asha Patil">
+<label for="em">Work email</label><input id="em" type="email" placeholder="asha@company.com">
+<label for="ch">Channel received from</label>
+<select id="ch"><option>Portal</option><option>Email</option><option>WhatsApp</option><option>SMS</option><option>Direct message</option></select>
+<label for="sj">Subject</label><input id="sj" placeholder="Short summary">
+<label for="ds">Details</label><textarea id="ds" placeholder="Describe what you need"></textarea>
+<div class="row"><button class="btn" id="go">Submit request</button><button class="btn ghost" id="demo" type="button">Fill sample</button></div>
+<div id="err" class="meta" style="color:var(--bad);margin-top:8px"></div>
+</div>
+<div class="card" id="result">
+<h2>What happens next</h2>
+<p class="meta">After you submit, the system assigns a ticket ID, classifies the request by keyword scoring, sets priority and SLA, and routes it to a team queue. Nothing is triaged by hand.</p>
+</div>
+</div>
+</section>
+
+<section class="panel" id="desk">
+<div class="stats" id="stats"></div>
+<div class="card">
+<div class="row" style="margin-bottom:8px">
+<select id="fd" style="width:auto"><option value="">All departments</option><option>HR</option><option>IT</option><option>Payroll</option><option>Operations</option><option>Other</option></select>
+<select id="fs" style="width:auto"><option value="">All states</option><option>Open</option><option>Active</option><option>Finalized</option></select>
+<button class="btn sm ghost" id="age" title="Demo: push all open tickets 5 hours back to trigger SLA breach">Simulate 5h passing</button>
+<button class="btn sm ghost" id="clr">Reset data</button>
+</div>
+<div id="list"></div>
+</div>
+</section>
+
+<section class="panel" id="flow">
+<pre class="mermaid">
+flowchart TD
+A1[Email] --> IN
+A2[WhatsApp / SMS] --> IN
+A3[Direct message] --> IN
+A4[Web portal form] --> IN
+IN[Unified intake: email-to-ticket, chat bot, portal] --> ID[Create record: unique ID, timestamp, requester, channel]
+ID --> CL{Auto-classify: keyword score per department}
+CL -->|HR| QH[HR queue]
+CL -->|IT| QI[IT queue]
+CL -->|Payroll| QP[Payroll queue]
+CL -->|Operations| QO[Operations queue]
+CL -->|No match or low confidence| QX[Other: triage desk reviews and reassigns]
+QH --> PR
+QI --> PR
+QP --> PR
+QO --> PR
+QX --> PR
+PR[Set priority P1/P2/P3 and SLA clock] --> AS[Assign: least-loaded available agent in queue]
+AS --> ACK[Auto-acknowledge requester with ticket ID]
+ACK --> OP((Open))
+OP -->|Agent picks up| AC((Active))
+AC -->|Needs info| WT[Waiting on requester, SLA paused]
+WT -->|Reply received| AC
+AC -->|Wrong team| RR[Reassign department] --> AS
+OP -->|SLA 75 percent elapsed| W1[Warn assignee]
+AC -->|SLA 75 percent elapsed| W1
+W1 -->|SLA breached| E1[Escalate: team lead, priority raised]
+E1 -->|Still breached at 2x SLA| E2[Escalate: department head]
+E1 --> AC
+P1X[P1: payroll error, system outage, urgent keywords] -.->|immediate| E1
+AC -->|Agent marks resolved| VR[Requester confirms fix]
+VR -->|Not fixed| AC
+VR -->|Confirmed or silent 3 days| FN((Finalized))
+FN --> AR[Archive record, send CSAT survey, feed reporting]
+</pre>
+<div class="card">
+<h2>Escalation matrix</h2>
+<div class="scroll"><table>
+<tr><th>Trigger</th><th>Action</th></tr>
+<tr><td>P1 keywords (outage, salary not paid, urgent, security)</td><td>Skip normal assignment wait, notify team lead at once</td></tr>
+<tr><td>75% of SLA elapsed</td><td>Warning to assignee</td></tr>
+<tr><td>100% of SLA elapsed</td><td>Escalate to team lead, flag as breached</td></tr>
+<tr><td>200% of SLA elapsed</td><td>Escalate to department head</td></tr>
+<tr><td>Unassigned for 30 minutes</td><td>Alert triage desk</td></tr>
+</table></div>
+</div>
+</section>
+
+<section class="panel" id="rules">
+<div class="card">
+<h2>Classification and SLA rules used by the prototype</h2>
+<p class="meta">Each keyword hit adds a point to a department. The highest score wins; a tie or zero hits goes to Other for manual triage.</p>
+<div class="scroll"><table id="rt"></table></div>
+<div class="hint">Priority: P1 if the text contains an urgent keyword, P2 for Payroll, otherwise P3. SLA hours: P1 = 2, P2 = 8, P3 = 24.</div>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+var RULES={
+HR:{team:"HR Operations",kw:["leave","vacation","holiday","sick","maternity","paternity","onboarding","policy","resign","appraisal","benefits","insurance","recruit","hr"]},
+IT:{team:"IT Service Desk",kw:["laptop","password","vpn","wifi","email access","software","install","printer","login","account locked","computer","network","outage","access","system","bug","error"]},
+Payroll:{team:"Payroll & Finance",kw:["salary","payslip","payroll","tax","reimbursement","bonus","deduction","pf","form 16","overtime","expense","payment","paycheck"]},
+Operations:{team:"Facilities & Ops",kw:["desk","seat","office","parking","travel","booking","cab","transport","cafeteria","equipment","supplies","meeting room","badge","ac"]}
+};
+var URGENT=["urgent","asap","outage","not paid","not received","security","breach","down","emergency","blocked"];
+var SLA={P1:2,P2:8,P3:24};
+var KEY="erms_tickets_v1";
+var mem=[];
+function load(){try{var v=localStorage.getItem(KEY);if(v)return JSON.parse(v)}catch(e){}return mem}
+function save(t){mem=t;try{localStorage.setItem(KEY,JSON.stringify(t))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+function classify(text){
+var t=" "+text.toLowerCase()+" ",scores={},hits={};
+Object.keys(RULES).forEach(function(d){scores[d]=0;hits[d]=[];RULES[d].kw.forEach(function(k){var re=new RegExp("\\b"+k.replace(/ /g,"\\s")+"\\b");if(re.test(t)){scores[d]++;hits[d].push(k)}})});
+var best="Other",max=0,tie=false;
+Object.keys(scores).forEach(function(d){if(scores[d]>max){max=scores[d];best=d;tie=false}else if(scores[d]===max&&max>0){tie=true}});
+if(max===0||tie)best="Other";
+var urgent=URGENT.filter(function(k){return t.indexOf(k)>-1});
+var pr=urgent.length?"P1":(best==="Payroll"?"P2":"P3");
+return{dept:best,priority:pr,matched:best==="Other"?[]:hits[best],urgent:urgent,confidence:best==="Other"?0:Math.min(100,Math.round(max/Math.max(1,max+1)*100+20))}}
+
+function newId(list){
+var d=new Date(),ymd=d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2);
+var n=list.filter(function(t){return t.id.indexOf("REQ-"+ymd)===0}).length+1;
+return "REQ-"+ymd+"-"+("000"+n).slice(-4)}
+
+function submit(){
+var nm=$("nm").value.trim(),em=$("em").value.trim(),sj=$("sj").value.trim(),ds=$("ds").value.trim();
+if(!nm||!sj||!ds||!/^\S+@\S+\.\S+$/.test(em)){$("err").textContent="Enter your name, a valid email, a subject and the details.";return}
+$("err").textContent="";
+var list=load(),c=classify(sj+" "+ds);
+var tk={id:newId(list),name:nm,email:em,channel:$("ch").value,subject:sj,detail:ds,dept:c.dept,team:c.dept==="Other"?"Triage Desk":RULES[c.dept].team,priority:c.priority,matched:c.matched,urgent:c.urgent,state:"Open",created:Date.now(),slaH:SLA[c.priority],log:[{t:Date.now(),m:"Created via "+$("ch").value+". Classified as "+c.dept+", priority "+c.priority+"."}]};
+list.unshift(tk);save(list);
+$("result").innerHTML='<h2>Request received</h2><p>Your ticket ID is <b style="font-size:20px">'+tk.id+'</b></p><table><tr><td>Department</td><td>'+tk.dept+' ('+esc(tk.team)+')</td></tr><tr><td>Priority</td><td><span class="pill '+tk.priority+'">'+tk.priority+'</span></td></tr><tr><td>Response SLA</td><td>'+tk.slaH+' hours</td></tr><tr><td>Matched on</td><td>'+(tk.matched.concat(tk.urgent).map(esc).join(", ")||"no keywords, sent to triage desk")+'</td></tr><tr><td>State</td><td><span class="pill Open">Open</span></td></tr></table><div class="hint">A confirmation with this ID would be sent to '+esc(em)+'. Track it in the Service desk tab.</div>';
+$("nm").value=$("em").value=$("sj").value=$("ds").value="";render()}
+
+function slaInfo(t){
+if(t.state==="Finalized")return{txt:"Closed",cls:"Finalized"};
+var el=(Date.now()-t.created+(t.shift||0))/36e5,pct=el/t.slaH;
+if(pct>=2)return{txt:"Escalated to dept head",cls:"P1"};
+if(pct>=1)return{txt:"SLA breached: escalated to team lead",cls:"P1"};
+if(pct>=.75)return{txt:"SLA warning",cls:"P2"};
+return{txt:Math.max(0,(t.slaH-el)).toFixed(1)+"h left",cls:"P3"}}
+
+function render(){
+var list=load(),fd=$("fd").value,fs=$("fs").value;
+var open=list.filter(function(t){return t.state==="Open"}).length,act=list.filter(function(t){return t.state==="Active"}).length,fin=list.filter(function(t){return t.state==="Finalized"}).length;
+var br=list.filter(function(t){return t.state!=="Finalized"&&slaInfo(t).cls==="P1"}).length;
+$("stats").innerHTML='<div><b>'+list.length+'</b>Total</div><div><b>'+open+'</b>Open</div><div><b>'+act+'</b>Active</div><div><b>'+fin+'</b>Finalized</div><div><b style="color:var(--bad)">'+br+'</b>Breached</div>';
+var f=list.filter(function(t){return(!fd||t.dept===fd)&&(!fs||t.state===fs)});
+if(!f.length){$("list").innerHTML='<p class="meta">No tickets yet. Submit a request from the first tab to see it here.</p>';return}
+$("list").innerHTML=f.map(function(t){
+var s=slaInfo(t),btn="";
+if(t.state==="Open")btn='<button class="btn sm" data-a="Active" data-id="'+t.id+'">Start work</button>';
+else if(t.state==="Active")btn='<button class="btn sm" data-a="Finalized" data-id="'+t.id+'">Finalize</button> <button class="btn sm ghost" data-a="Open" data-id="'+t.id+'">Reopen to queue</button>';
+else btn='<button class="btn sm ghost" data-a="Active" data-id="'+t.id+'">Reopen</button>';
+return '<div class="tk"><div class="row"><b>'+t.id+'</b><span class="pill '+t.state+'">'+t.state+'</span><span class="pill '+t.priority+'">'+t.priority+'</span><span class="meta">'+t.dept+' · '+esc(t.team)+'</span></div><div style="margin:4px 0"><b>'+esc(t.subject)+'</b></div><div class="meta">'+esc(t.name)+' · via '+t.channel+' · <span class="'+s.cls+'" style="font-weight:600">'+s.txt+'</span></div><details><summary class="meta" style="cursor:pointer">Details and history</summary><p>'+esc(t.detail)+'</p><ul class="meta">'+t.log.map(function(l){return"<li>"+new Date(l.t).toLocaleString()+": "+esc(l.m)+"</li>"}).join("")+'</ul></details><div class="row" style="margin-top:6px">'+btn+'</div></div>'}).join("")}
+
+$("list").addEventListener("click",function(e){
+var b=e.target.closest("button[data-a]");if(!b)return;
+var list=load(),t=list.filter(function(x){return x.id===b.dataset.id})[0];if(!t)return;
+t.state=b.dataset.a;t.log.push({t:Date.now(),m:"State changed to "+t.state+"."});save(list);render()});
+$("go").onclick=submit;
+$("fd").onchange=$("fs").onchange=render;
+$("clr").onclick=function(){save([]);render()};
+$("age").onclick=function(){var l=load();l.forEach(function(t){if(t.state!=="Finalized")t.shift=(t.shift||0)+5*36e5});save(l);render()};
+var samples=[["Ravi Kumar","ravi@company.com","WhatsApp","Salary not received","My salary for this month was not paid and I need it urgent."],["Meera Shah","meera@company.com","Email","Leave application","I would like to apply for vacation leave from 12 to 16 Nov."],["Dan Fox","dan@company.com","SMS","VPN not working","I cannot login to the VPN on my laptop since morning."],["Priya Nair","priya@company.com","Direct message","Question","Can someone call me about the thing we discussed?"]],si=0;
+$("demo").onclick=function(){var s=samples[si++%samples.length];$("nm").value=s[0];$("em").value=s[1];$("ch").value=s[2];$("sj").value=s[3];$("ds").value=s[4]};
+var rows='<tr><th>Department</th><th>Team</th><th>Keywords</th></tr>';
+Object.keys(RULES).forEach(function(d){rows+='<tr><td>'+d+'</td><td>'+RULES[d].team+'</td><td>'+RULES[d].kw.join(", ")+'</td></tr>'});
+rows+='<tr><td>Other</td><td>Triage Desk</td><td>No match or tied score</td></tr><tr><td>Urgent (P1)</td><td>Team lead notified</td><td>'+URGENT.join(", ")+'</td></tr>';
+$("rt").innerHTML=rows;
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){
+document.querySelectorAll("nav button").forEach(function(x){x.setAttribute("aria-selected",x===b)});
+document.querySelectorAll(".panel").forEach(function(p){p.classList.toggle("on",p.id===b.dataset.t)});
+if(b.dataset.t==="desk")render()}});
+render();
+try{var dark=window.matchMedia("(prefers-color-scheme: dark)").matches;mermaid.initialize({startOnLoad:false,theme:dark?"dark":"default",flowchart:{useMaxWidth:false}});
+document.querySelector('[data-t="flow"]').addEventListener("click",function(){if(!document.querySelector("pre.mermaid[data-processed]"))mermaid.run({querySelector:"pre.mermaid"})},{once:true})}catch(e){}
+})();
+</script>
+</body>
+</html>
